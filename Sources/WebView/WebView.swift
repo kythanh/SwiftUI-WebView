@@ -53,11 +53,46 @@ public struct WebView: View, UIViewRepresentable {
     self.webView = webView
   }
   
+  public  class Coordinator: NSObject, WKNavigationDelegate {
+    var parent: WKWebView
+
+    init(_ parent: WKWebView) {
+        self.parent = parent
+    }
+
+    public func webView(_ webView: WKWebView, authenticationChallenge challenge: URLAuthenticationChallenge, shouldAllowDeprecatedTLS decisionHandler: @escaping (Bool) -> Void) {
+        print("code here")
+    }
+
+    public func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        print("code here")
+    }
+
+    // Delegate methods go here
+    public func webView(_ webView: WKWebView, didReceive challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+        print("authenticationMethod \(challenge.protectionSpace.authenticationMethod)")
+        if challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodNTLM {
+            let user = "username"
+            let password = "password"
+            let credential = URLCredential(user: user, password: password, persistence: URLCredential.Persistence.forSession)
+            challenge.sender?.use(credential, for: challenge)
+            completionHandler(.useCredential, credential)
+        }else{
+            completionHandler(.performDefaultHandling, nil);
+        }
+    }
+  }
+
+  public func makeCoordinator() -> Coordinator {
+      Coordinator(self.webView)
+  }
+  
   public func makeUIView(context: UIViewRepresentableContext<WebView>) -> WKWebView {
     webView
   }
   
   public func updateUIView(_ uiView: WKWebView, context: UIViewRepresentableContext<WebView>) {
+    uiView.navigationDelegate = context.coordinator
   }
 }
 #endif
